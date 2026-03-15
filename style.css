@@ -1,0 +1,63 @@
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.wrapper {
+    width: 100%;
+    max-width: 950px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 { color: #2d3436; margin-bottom: 5px; }
+header p { color: #636e72; margin-top: 0; }
+header small { color: #a29bfe; font-weight: bold; }
+
+.table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #f8f9fa;
+    padding: 18px;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #b2bec3;
+    border-bottom: 1px solid #edf2f7;
+}
+
+td {
+    padding: 18px;
+    border-bottom: 1px solid #f1f2f6;
+    color: #2d3436;
+}
+
+.status-pill {
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.status-pill.up { background: #d1fae5; color: #065f46; }
+.status-pill.down { background: #fee2e2; color: #991b1b; }
+
+tr:hover { background-color: #f9fafb; }
