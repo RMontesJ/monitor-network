@@ -13,7 +13,6 @@ DB_CONFIG = {
 INTERVALO_SEGUNDOS = 30 
 
 def get_network_range():
-    """Detecta la IP local y devuelve el rango /24 automáticamente"""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -23,12 +22,16 @@ def get_network_range():
     except Exception:
         return "192.168.1.0/24"
 
-def update_database(devices):
+def update_database(devices, network):
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor()
         
-        sql = """
+        # 1. Actualizar la red actual en la tabla network_info
+        cursor.execute("UPDATE network_info SET current_network = %s WHERE id = 1", (network,))
+        
+        # 2. Actualizar los dispositivos
+        sql_devices = """
             INSERT INTO scan_results (ip_address, hostname, status) 
             VALUES (%s, %s, %s)
             ON DUPLICATE KEY UPDATE 
@@ -36,11 +39,11 @@ def update_database(devices):
                 hostname = VALUES(hostname),
                 last_check = CURRENT_TIMESTAMP
         """
-        
         data = [(d['ip'], d['name'], d['status']) for d in devices]
-        cursor.executemany(sql, data)
+        cursor.executemany(sql_devices, data)
+        
         conn.commit()
-        print(f"[*] Base de datos actualizada con {len(devices)} dispositivos.")
+        print(f"[*] BD Actualizada. Red: {network} | Dispositivos: {len(devices)}")
     except mysql.connector.Error as err:
         print(f"[!] Error de MySQL: {err}")
     finally:
@@ -48,11 +51,13 @@ def update_database(devices):
             conn.close()
 
 def main():
-    target_network = get_network_range()
     nm = nmap.PortScanner()
+    print("=== MONITOR INICIADO ===")
     
     while True:
-        print(f"\n[*] Escaneando red: {target_network}")
+        target_network = get_network_range()
+        print(f"\n[+] ESCANEANDO: {target_network}")
+        
         try:
             nm.scan(hosts=target_network, arguments='-sn')
             found_devices = []
@@ -62,11 +67,12 @@ def main():
                     'name': nm[host].hostname() or "Desconocido",
                     'status': nm[host].state()
                 })
-            update_database(found_devices)
+            
+            update_database(found_devices, target_network)
+            
         except Exception as e:
-            print(f"[!] Error durante el escaneo: {e}")
+            print(f"[!] Error: {e}")
         
-        print(f"[*] Esperando {INTERVALO_SEGUNDOS} segundos...")
         time.sleep(INTERVALO_SEGUNDOS)
 
 if __name__ == "__main__":

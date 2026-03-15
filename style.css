@@ -61,3 +61,19 @@ td {
 .status-pill.down { background: #fee2e2; color: #991b1b; }
 
 tr:hover { background-color: #f9fafb; }
+
+.network-badge {
+    display: inline-block;
+    background: #e1f5fe;
+    color: #0288d1;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-size: 14px;
+    margin-top: 10px;
+    border: 1px solid #b3e5fc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.network-badge strong {
+    color: #01579b;
+}
