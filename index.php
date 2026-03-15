@@ -1,5 +1,5 @@
 <?php
-$conn = new mysqli("localhost", "Rafa", "1234", "network_monitor");
+$conn = new mysqli("??", "??", "??", "??");
 
 if ($conn->connect_error) {
     die("Error de conexión: " . $conn->connect_error);

@@ -5,10 +5,10 @@ import time
 
 # --- CONFIGURACIÓN ---
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'Rafa',       
-    'password': '1234',       
-    'database': 'network_monitor'
+    'host': '??',
+    'user': '??',       
+    'password': '??',       
+    'database': '??'
 }
 INTERVALO_SEGUNDOS = 30 
 
@@ -59,7 +59,9 @@ def main():
         print(f"\n[+] ESCANEANDO: {target_network}")
         
         try:
-            nm.scan(hosts=target_network, arguments='-sn')
+            # -sL lee nombres de los servidores DNS locales
+            # --system-dns usa el resolvedor del sistema operativo
+            nm.scan(hosts=target_network, arguments='-sn --system-dns')
             found_devices = []
             for host in nm.all_hosts():
                 found_devices.append({
