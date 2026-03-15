@@ -1,5 +1,5 @@
 <?php
-$conexion = new mysqli("localhost", "Rafa", "1234", "network_monitor");
+$conexion = new mysqli("??", "??", "??", "??");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $ip = $_POST['ip_address'];

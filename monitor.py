@@ -5,10 +5,10 @@ import time
 
 # --- CONFIGURACIÓN (Ajusta tus credenciales aquí) ---
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'Rafa',       
-    'password': '1234',       
-    'database': 'network_monitor'
+    'host': '??',
+    'user': '??',       
+    'password': '??',       
+    'database': '??'
 }
 INTERVALO_SEGUNDOS = 30 
 
