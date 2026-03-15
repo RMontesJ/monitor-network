@@ -3,16 +3,17 @@ import mysql.connector
 import socket
 import time
 
-# --- CONFIGURACIÓN ---
+# --- CONFIGURACIÓN (Ajusta tus credenciales aquí) ---
 DB_CONFIG = {
-    'host': '??',
-    'user': '??',       
-    'password': '??',       
-    'database': '??'
+    'host': 'localhost',
+    'user': 'Rafa',       
+    'password': '1234',       
+    'database': 'network_monitor'
 }
 INTERVALO_SEGUNDOS = 30 
 
 def get_network_range():
+    """Detecta la IP local y devuelve el rango /24 automáticamente"""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -30,7 +31,11 @@ def update_database(devices, network):
         # 1. Actualizar la red actual en la tabla network_info
         cursor.execute("UPDATE network_info SET current_network = %s WHERE id = 1", (network,))
         
-        # 2. Actualizar los dispositivos
+        # 2. LIMPIEZA DE ESTADO: Ponemos todos en 'down' antes de marcar los activos
+        # Esto permite que los que ya no responden cambien de estado en la web
+        cursor.execute("UPDATE scan_results SET status = 'down'")
+        
+        # 3. Insertar o actualizar los dispositivos encontrados
         sql_devices = """
             INSERT INTO scan_results (ip_address, hostname, status) 
             VALUES (%s, %s, %s)
@@ -43,7 +48,7 @@ def update_database(devices, network):
         cursor.executemany(sql_devices, data)
         
         conn.commit()
-        print(f"[*] BD Actualizada. Red: {network} | Dispositivos: {len(devices)}")
+        print(f"[*] BD Sincronizada. Red: {network} | Activos: {len(devices)}")
     except mysql.connector.Error as err:
         print(f"[!] Error de MySQL: {err}")
     finally:
@@ -52,29 +57,31 @@ def update_database(devices, network):
 
 def main():
     nm = nmap.PortScanner()
-    print("=== MONITOR INICIADO ===")
+    print("=== MONITOR DE RED INICIADO (PRESIONA CTRL+C PARA SALIR) ===")
     
     while True:
         target_network = get_network_range()
         print(f"\n[+] ESCANEANDO: {target_network}")
         
         try:
-            # -sL lee nombres de los servidores DNS locales
-            # --system-dns usa el resolvedor del sistema operativo
-            nm.scan(hosts=target_network, arguments='-sn --system-dns')
+            # -sn: Ping scan | -PR: ARP request (más efectivo para encontrar routers)
+            # --system-dns: Intenta resolver nombres usando el SO
+            nm.scan(hosts=target_network, arguments='-sn -PR --system-dns')
+            
             found_devices = []
             for host in nm.all_hosts():
                 found_devices.append({
                     'ip': host,
                     'name': nm[host].hostname() or "Desconocido",
-                    'status': nm[host].state()
+                    'status': nm[host].state() # Devuelve 'up'
                 })
             
             update_database(found_devices, target_network)
             
         except Exception as e:
-            print(f"[!] Error: {e}")
+            print(f"[!] Error durante el escaneo: {e}")
         
+        print(f"[*] Esperando {INTERVALO_SEGUNDOS} segundos para el próximo ciclo...")
         time.sleep(INTERVALO_SEGUNDOS)
 
 if __name__ == "__main__":

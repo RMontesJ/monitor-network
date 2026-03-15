@@ -77,3 +77,62 @@ tr:hover { background-color: #f9fafb; }
 .network-badge strong {
     color: #01579b;
 }
+
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background-color: #f0f4f8;
+    margin: 0;
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.wrapper { width: 100%; max-width: 900px; }
+
+header { text-align: center; margin-bottom: 30px; }
+
+h1 { color: #102a43; margin-bottom: 5px; }
+
+.network-badge {
+    display: inline-block;
+    background: #d9e2ec;
+    color: #334e68;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    border: 1px solid #bcccdc;
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+th {
+    background: #f1f5f8;
+    padding: 15px;
+    text-align: left;
+    font-size: 13px;
+    color: #627d98;
+    border-bottom: 2px solid #dae1e7;
+}
+
+td { padding: 15px; border-bottom: 1px solid #f1f5f8; color: #334e68; }
+
+.status-pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+}
+
+/* COLORES DE ESTADO */
+.status-pill.up { background-color: #27ae60; }
+.status-pill.down { background-color: #e74c3c; }
+
+tr:hover { background-color: #f9fafb; }
