@@ -3,17 +3,16 @@ import mysql.connector
 import socket
 import time
 
-# --- CONFIGURACIÓN (Ajusta tus credenciales aquí) ---
+# --- CONFIGURACIÓN ---
 DB_CONFIG = {
     'host': '??',
     'user': '??',       
     'password': '??',       
     'database': '??'
 }
-INTERVALO_SEGUNDOS = 30 
+INTERVALO_SEGUNDOS = 60 
 
 def get_network_range():
-    """Detecta la IP local y devuelve el rango /24 automáticamente"""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -28,20 +27,20 @@ def update_database(devices, network):
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor()
         
-        # 1. Actualizar la red actual en la tabla network_info
         cursor.execute("UPDATE network_info SET current_network = %s WHERE id = 1", (network,))
         
-        # 2. LIMPIEZA DE ESTADO: Ponemos todos en 'down' antes de marcar los activos
-        # Esto permite que los que ya no responden cambien de estado en la web
+        # Marcamos como 'down' pero respetamos los nombres ya existentes
         cursor.execute("UPDATE scan_results SET status = 'down'")
         
-        # 3. Insertar o actualizar los dispositivos encontrados
+        # SQL MEJORADO: 
+        # 1. Actualiza estado y fecha.
+        # 2. Solo actualiza el hostname si el nuevo NO es "Desconocido" (así no perdemos info vieja).
         sql_devices = """
             INSERT INTO scan_results (ip_address, hostname, status) 
             VALUES (%s, %s, %s)
             ON DUPLICATE KEY UPDATE 
                 status = VALUES(status), 
-                hostname = VALUES(hostname),
+                hostname = IF(VALUES(hostname) != 'Desconocido', VALUES(hostname), hostname),
                 last_check = CURRENT_TIMESTAMP
         """
         data = [(d['ip'], d['name'], d['status']) for d in devices]
@@ -57,23 +56,29 @@ def update_database(devices, network):
 
 def main():
     nm = nmap.PortScanner()
-    print("=== MONITOR DE RED INICIADO (PRESIONA CTRL+C PARA SALIR) ===")
+    print("=== MONITOR DE RED MEJORADO ===")
     
     while True:
         target_network = get_network_range()
         print(f"\n[+] ESCANEANDO: {target_network}")
         
         try:
-            # -sn: Ping scan | -PR: ARP request (más efectivo para encontrar routers)
-            # --system-dns: Intenta resolver nombres usando el SO
-            nm.scan(hosts=target_network, arguments='-sn -PR --system-dns')
+            # Escaneo con resolución de nombres mejorada
+            nm.scan(hosts=target_network, arguments='-sP --system-dns')
             
             found_devices = []
             for host in nm.all_hosts():
+                nombre = nm[host].hostname()
+                if not nombre:
+                    try:
+                        nombre = socket.gethostbyaddr(host)[0]
+                    except:
+                        nombre = "Desconocido"
+
                 found_devices.append({
                     'ip': host,
-                    'name': nm[host].hostname() or "Desconocido",
-                    'status': nm[host].state() # Devuelve 'up'
+                    'name': nombre,
+                    'status': nm[host].state()
                 })
             
             update_database(found_devices, target_network)
@@ -81,8 +86,15 @@ def main():
         except Exception as e:
             print(f"[!] Error durante el escaneo: {e}")
         
-        print(f"[*] Esperando {INTERVALO_SEGUNDOS} segundos para el próximo ciclo...")
-        time.sleep(INTERVALO_SEGUNDOS)
+        # --- CUENTA ATRÁS EN TIEMPO REAL ---
+        print("") # Espacio estético
+        for i in range(INTERVALO_SEGUNDOS, 0, -1):
+            # \r hace que el cursor vuelva al inicio de la línea
+            # end="" evita que salte a una línea nueva
+            print(f"[*] Siguiente escaneo en: {i} segundos...   ", end="\r")
+            time.sleep(1)
+        
+        print("[*] Iniciando escaneo ahora...                      ", end="\r")
 
 if __name__ == "__main__":
     main()
